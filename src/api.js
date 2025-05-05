@@ -239,6 +239,17 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         ["number"]
     );
 
+    // int sqlite3_text_init(
+    //      sqlite3* db,
+    //      char** errmsg_ptr,
+    //      const sqlite3_api_routines* api
+    // ) {
+    var sqlite3_text_init = cwrap(
+        "sqlite3_text_init",
+        "number",
+        ["number", "number", "number"]
+    );
+
     var sqlite3_update_hook = cwrap(
         "sqlite3_update_hook",
         "number",
@@ -834,6 +845,20 @@ Module["onRuntimeInitialized"] = function onRuntimeInitialized() {
         this.handleError(sqlite3_open(this.filename, apiTemp));
         this.db = getValue(apiTemp, "i32");
         registerExtensionFunctions(this.db);
+
+        // Initialiser l'extension
+        // var errMessagePtr = _malloc(4);
+        // setValue(errMessagePtr, 0, "i8*");
+        sqlite3_text_init(this.db, 0, 0);
+
+        /* Vérifier le résultat
+        if (result !== SQLITE_OK) {
+            var errMessage = UTF8ToString(getValue(errMessagePtr, "i8*"));
+            _free(errMessagePtr);
+            // eslint-disable-next-line max-len
+        }
+        _free(errMessagePtr); */
+
         // A list of all prepared statements of the database
         this.statements = {};
         // A list of all user function of the database

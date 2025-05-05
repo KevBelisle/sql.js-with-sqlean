@@ -15,6 +15,9 @@ EXTENSION_FUNCTIONS = extension-functions.c
 EXTENSION_FUNCTIONS_URL = https://www.sqlite.org/contrib/download/extension-functions.c?get=25
 EXTENSION_FUNCTIONS_SHA1 = c68fa706d6d9ff98608044c00212473f9c14892f
 
+# 
+SQLEAN_TEXT_C = sqlite3-text.c
+
 EMCC=emcc
 
 SQLITE_COMPILATION_FLAGS = \
@@ -59,7 +62,7 @@ EMFLAGS_DEBUG = \
 	-s ASSERTIONS=2 \
 	-O1
 
-BITCODE_FILES = out/sqlite3.o out/extension-functions.o
+BITCODE_FILES = out/sqlite3.o out/sqlean-text.o out/extension-functions.o
 
 OUTPUT_WRAPPER_FILES = src/shell-pre.js src/shell-post.js
 
@@ -147,6 +150,11 @@ out/sqlite3.o: sqlite-src/$(SQLITE_AMALGAMATION)
 	# Generate llvm bitcode
 	$(EMCC) $(SQLITE_COMPILATION_FLAGS) -c sqlite-src/$(SQLITE_AMALGAMATION)/sqlite3.c -o $@
 
+out/sqlean-text.o: sqlean-src/sqlite3-text.c
+	mkdir -p out
+	# Generate llvm bitcode
+	$(EMCC) $(SQLITE_COMPILATION_FLAGS) -s LINKABLE=1 -c sqlean-src/sqlite3-text.c -o $@
+
 # Since the extension-functions.c includes other headers in the sqlite_amalgamation, we declare that this depends on more than just extension-functions.c
 out/extension-functions.o: sqlite-src/$(SQLITE_AMALGAMATION)
 	mkdir -p out
@@ -169,15 +177,18 @@ cache/$(EXTENSION_FUNCTIONS):
 ## sqlite-src
 .PHONY: sqlite-src
 sqlite-src: sqlite-src/$(SQLITE_AMALGAMATION) sqlite-src/$(SQLITE_AMALGAMATION)/$(EXTENSION_FUNCTIONS)
+# sqlite-src/$(SQLITE_AMALGAMATION)/$(SQLEAN_TEXT_C)
 
 sqlite-src/$(SQLITE_AMALGAMATION): cache/$(SQLITE_AMALGAMATION).zip sqlite-src/$(SQLITE_AMALGAMATION)/$(EXTENSION_FUNCTIONS)
 	mkdir -p sqlite-src/$(SQLITE_AMALGAMATION)
+	mkdir -p sqlean-src
 	echo '$(SQLITE_AMALGAMATION_ZIP_SHA3)  ./cache/$(SQLITE_AMALGAMATION).zip' > cache/check.txt
 	sha3sum -a 256 -c cache/check.txt
 	# We don't delete the sqlite_amalgamation folder. That's a job for clean
 	# Also, the extension functions get copied here, and if we get the order of these steps wrong,
 	# this step could remove the extension functions, and that's not what we want
 	unzip -u 'cache/$(SQLITE_AMALGAMATION).zip' -d sqlite-src/
+	cp sqlite-src/$(SQLITE_AMALGAMATION)/* sqlean-src/
 	touch $@
 
 sqlite-src/$(SQLITE_AMALGAMATION)/$(EXTENSION_FUNCTIONS): cache/$(EXTENSION_FUNCTIONS)
