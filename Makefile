@@ -52,8 +52,8 @@ EMFLAGS_WASM = \
 
 EMFLAGS_OPTIMIZED= \
 	-Oz \
-	-flto \
-	--closure 1
+	-flto
+#	--closure 1
 
 EMFLAGS_DEBUG = \
 	-s ASSERTIONS=2 \
